@@ -1,0 +1,11 @@
+package com.yourcompany.crm.model;
+
+public enum NotificationType {
+  OPPORTUNITY_STATUS_CHANGE,
+  CUSTOMER_ASSIGNMENT,
+  TASK_ASSIGNMENT,
+  TASK_COMPLETION,
+  FOLLOW_UP_REMINDER,
+  PIPELINE_STAGE_CHANGE,
+  MEETING_REMINDER
+}
