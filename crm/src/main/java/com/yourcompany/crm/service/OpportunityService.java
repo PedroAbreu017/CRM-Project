@@ -1,7 +1,13 @@
 package com.yourcompany.crm.service;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import org.springframework.context.ApplicationEventPublisher;
@@ -9,6 +15,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.yourcompany.crm.dto.OpportunityDTO;
+import com.yourcompany.crm.dto.StageStatDTO;
 import com.yourcompany.crm.event.OpportunityEvent;
 import com.yourcompany.crm.model.Customer;
 import com.yourcompany.crm.model.Opportunity;
@@ -159,4 +166,65 @@ public class OpportunityService {
         opportunity.setPipelineStage(PipelineStage.valueOf(dto.getPipelineStage()));
         opportunity.setLostReason(dto.getLostReason());
     }
+
+    // Adição ao OpportunityService.java
+
+    public Map<String, List<OpportunityDTO>> getAllGroupedByStage() {
+    List<Opportunity> opportunities = opportunityRepository.findAll();
+    
+    // Agrupar por estágio
+    Map<String, List<OpportunityDTO>> result = new HashMap<>();
+    
+    // Inicializar todos os estágios com listas vazias
+    for (PipelineStage stage : PipelineStage.values()) {
+        result.put(stage.name(), new ArrayList<>());
+    }
+    
+    // Preencher com oportunidades
+    opportunities.forEach(opportunity -> {
+        String stage = opportunity.getPipelineStage().name();
+        if (!result.containsKey(stage)) {
+            result.put(stage, new ArrayList<>());
+        }
+        result.get(stage).add(toDTO(opportunity));
+    });
+    
+    return result;
+}
+
+    public List<StageStatDTO> getStageStatistics() {
+    List<Opportunity> opportunities = opportunityRepository.findAll();
+    
+    Map<PipelineStage, List<Opportunity>> groupedByStage = opportunities.stream()
+        .collect(Collectors.groupingBy(Opportunity::getPipelineStage));
+    
+    List<StageStatDTO> result = new ArrayList<>();
+    
+    // Calcular estatísticas para cada estágio
+    for (PipelineStage stage : PipelineStage.values()) {
+        List<Opportunity> stageOpportunities = groupedByStage.getOrDefault(stage, new ArrayList<>());
+        
+        BigDecimal totalValue = stageOpportunities.stream()
+            .map(Opportunity::getValue)
+            .reduce(BigDecimal.ZERO, BigDecimal::add);
+        
+        BigDecimal avgValue = stageOpportunities.isEmpty() 
+            ? BigDecimal.ZERO 
+            : totalValue.divide(BigDecimal.valueOf(stageOpportunities.size()), 2, RoundingMode.HALF_UP);
+        
+        result.add(StageStatDTO.builder()
+            .stage(stage.name())
+            .displayName(stage.getDisplayName())
+            .count(stageOpportunities.size())
+            .totalValue(totalValue)
+            .averageValue(avgValue)
+            .build());
+    }
+    
+    // Ordenar por ordem do pipeline
+    result.sort(Comparator.comparing(stat -> 
+        PipelineStage.valueOf(stat.getStage()).getOrder()));
+    
+    return result;
+}
 }    

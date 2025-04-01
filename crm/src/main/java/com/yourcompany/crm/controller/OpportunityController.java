@@ -1,6 +1,7 @@
 package com.yourcompany.crm.controller;
 
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -15,6 +16,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.yourcompany.crm.dto.OpportunityDTO;
+import com.yourcompany.crm.dto.StageStatDTO;
 import com.yourcompany.crm.service.OpportunityService;
 
 import jakarta.validation.Valid;
@@ -85,4 +87,27 @@ public class OpportunityController {
             @RequestParam String stage) {
         return ResponseEntity.ok(opportunityService.updatePipelineStage(id, stage));
     }
+
+    @GetMapping("/by-stage")
+    @PreAuthorize("hasRole('USER')")
+    public ResponseEntity<Map<String, List<OpportunityDTO>>> getOpportunitiesByStage() {
+        
+        return ResponseEntity.ok(opportunityService.getAllGroupedByStage());
+    }
+
+    @PutMapping("/{id}/move-to-stage")
+    @PreAuthorize("hasRole('USER')")
+    public ResponseEntity<OpportunityDTO> moveToStage(
+        @PathVariable Long id,
+        @RequestParam String stage) {
+    return ResponseEntity.ok(opportunityService.updatePipelineStage(id, stage));
+    }
+
+    @GetMapping("/stage-stats")
+    @PreAuthorize("hasRole('USER')")
+    public ResponseEntity<List<StageStatDTO>> getStageStats() {
+    
+        return ResponseEntity.ok(opportunityService.getStageStatistics());
+    }
+
 }
